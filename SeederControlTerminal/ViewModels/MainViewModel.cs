@@ -39,12 +39,15 @@ namespace SeederControlTerminal.ViewModels
         public string ConnectionStatus => IsReceiverStarted ? $"Текущий приемник активен. Слушаю порт {ReceiverPort}..." : "Текущий приемник отключен";
         public string StatusColor => IsReceiverStarted ? "#2ed573" : "#718093";
         public bool IsReceiverFieldsEnabled => !IsReceiverStarted;
+        public string ReceiverButtonColor => IsReceiverStarted ? "#ff4757" : "#2ed573";
+
 
         // UI теперь биндится прямо к коллекции разноцветных записей
         public ObservableCollection<LogEntry> LogEntries => _logService.Entries;
 
         public ICommand SendMessageCommand { get; }
         public ICommand ToggleReceiverCommand { get; }
+        public ICommand ClearLogCommand { get; }
 
         public MainWindowViewModel(IMessageSender messageSender, ILogService logService)
         {
@@ -67,6 +70,7 @@ namespace SeederControlTerminal.ViewModels
             );
             SendMessageCommand = ReactiveCommand.CreateFromTask(SendMessageAsync, canSend);
             ToggleReceiverCommand = ReactiveCommand.Create(ToggleReceiver);
+            ClearLogCommand = ReactiveCommand.Create(() => _logService.Clear());
         }
 
         private void ToggleReceiver()
@@ -87,6 +91,7 @@ namespace SeederControlTerminal.ViewModels
             this.RaisePropertyChanged(nameof(ConnectionStatus));
             this.RaisePropertyChanged(nameof(StatusColor));
             this.RaisePropertyChanged(nameof(IsReceiverFieldsEnabled));
+            this.RaisePropertyChanged(nameof(ReceiverButtonColor));
         }
 
         private void HandleIncomingMessage(string jsonMessage)

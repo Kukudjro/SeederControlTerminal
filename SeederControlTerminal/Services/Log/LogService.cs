@@ -21,5 +21,13 @@ namespace SeederControlTerminal.Services.Log
                 Entries.Add(new LogEntry { Message = message, Color = color });
             });
         }
+
+        public void Clear()
+        {
+            Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+            {
+                Entries.Clear();
+            });
+        }
     }
 }

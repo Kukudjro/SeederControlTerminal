@@ -10,5 +10,6 @@ namespace SeederControlTerminal.Services.Log
         void Success(string message);
         void Warning(string message);
         void Error(string message);
+        void Clear();
     }
 }

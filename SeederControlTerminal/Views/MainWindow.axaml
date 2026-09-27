@@ -28,7 +28,7 @@
                              IsEnabled="{Binding !IsSending}"/>
 
                     <TextBlock Text="Удаленный Порт:"/>
-                    <NumericUpDown Value="{Binding Port}" Minimum="1" Maximum="65535" FormatString="0" 
+                    <NumericUpDown Value="{Binding Port}" Minimum="1" Maximum="65535" FormatString="0"
                                    IsEnabled="{Binding !IsSending}"/>
 
                     <TextBlock Text="Текст сообщения:"/>
@@ -60,7 +60,8 @@
                     <Button Content="{Binding ReceiverButtonText}"
                             Command="{Binding ToggleReceiverCommand}"
                             HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
-                            Background="#2ed573" Foreground="White" Padding="10" FontWeight="Bold"/>
+                            Background="{Binding ReceiverButtonColor}" Foreground="White"
+                            Padding="10" FontWeight="Bold"/>
                 </StackPanel>
 
             </StackPanel>
@@ -69,10 +70,33 @@
         <!-- ПРАВАЯ ЧАСТЬ: Монитор обмена (Лог) -->
         <Grid Grid.Column="1" RowDefinitions="Auto, Auto, *" Margin="15">
 
-            <!-- Заголовок -->
-            <TextBlock Grid.Row="0" Text="Монитор обмена данными (События)" FontSize="16" FontWeight="Bold" Margin="0,0,0,10"/>
+            <Grid Grid.Row="0" ColumnDefinitions="*, Auto" Margin="0,0,0,10">
+                <TextBlock Grid.Column="0"
+                           Text="Монитор обмена данными (События)"
+                           FontSize="15"
+                           FontWeight="SemiBold"
+                           VerticalAlignment="Center"
+                           Foreground="#2f3542"/>
 
-            <!-- НОВЫЙ БЛОК ВИЗУАЛИЗАЦИИ СТАТУСА -->
+                <Button Grid.Column="1"
+                        Command="{Binding ClearLogCommand}"
+                        Content="Очистить лог"
+                        Background="Transparent"
+                        Foreground="#747d8c"
+                        FontSize="12"
+                        FontWeight="Medium"
+                        Padding="8,4"
+                        VerticalAlignment="Center">
+
+                    <Button.Styles>
+                        <Style Selector="Button:pointerover /template/ ContentPresenter">
+                            <Setter Property="Background" Value="#f1f2f6"/>
+                            <Setter Property="Foreground" Value="#ff4757"/> 
+                        </Style>
+                    </Button.Styles>
+                </Button>
+            </Grid>
+
             <Border Grid.Row="1" Background="#f1f2f6" CornerRadius="6" Padding="10" Margin="0,0,0,15">
                 <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
 
