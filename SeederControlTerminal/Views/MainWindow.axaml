@@ -24,13 +24,16 @@
                     <Border Height="1" Background="#e0e0e0"/>
 
                     <TextBlock Text="Удаленный IP (куда шлем):"/>
-                    <TextBox Text="{Binding IpAddress, Mode=TwoWay}"/>
+                    <TextBox Text="{Binding IpAddress, Mode=TwoWay}"
+                             IsEnabled="{Binding !IsSending}"/>
 
                     <TextBlock Text="Удаленный Порт:"/>
-                    <NumericUpDown Value="{Binding Port}" Minimum="1" Maximum="65535" FormatString="0"/>
+                    <NumericUpDown Value="{Binding Port}" Minimum="1" Maximum="65535" FormatString="0" 
+                                   IsEnabled="{Binding !IsSending}"/>
 
                     <TextBlock Text="Текст сообщения:"/>
-                    <TextBox Text="{Binding MessageText, Mode=TwoWay}" Watermark="Payload..."/>
+                    <TextBox Text="{Binding MessageText, Mode=TwoWay}" Watermark="Payload..."
+                             IsEnabled="{Binding !IsSending}"/>
 
                     <Button Content="Отправить по TCP"
                             Command="{Binding SendMessageCommand}"
@@ -86,12 +89,38 @@
                     <!-- Текст текущего статуса -->
                     <TextBlock Text="{Binding ConnectionStatus}" FontWeight="Medium" VerticalAlignment="Center" Foreground="#2f3542"/>
 
-                    <!-- ИНДИКАТОР ОТПРАВКИ (Появляется, когда летит пакет) -->
-                    <ProgressBar IsIndeterminate="True"
-                                 IsVisible="{Binding IsSending}"
-                                 Width="100" Height="4"
-                                 Margin="20,0,0,0"
-                                 Foreground="#1e90ff"/>
+                    <Viewbox Width="32" Height="32" IsVisible="{Binding IsSending}" Margin="20,0,0,0">
+                        <Canvas Width="32" Height="32">
+
+                            <!-- Центральная точка (ядро сокета) -->
+                            <Ellipse Width="6" Height="6" Fill="#1e90ff" Canvas.Left="13" Canvas.Top="13"/>
+
+                            <!-- Внешнее пульсирующее кольцо радара -->
+                            <Ellipse Width="32" Height="32" Canvas.Left="0" Canvas.Top="0"
+                                     Stroke="#1e90ff" StrokeThickness="2" RenderTransformOrigin="50%,50%">
+                                <Ellipse.Styles>
+                                    <Style Selector="Ellipse">
+                                        <Style.Animations>
+                                            <!-- Бесконечный цикл расширения и затухания кольца силами GPU (OpenGL) -->
+                                            <Animation Duration="0:0:1.5" IterationCount="Infinite">
+                                                <KeyFrame Cue="0%">
+                                                    <Setter Property="ScaleTransform.ScaleX" Value="0.1"/>
+                                                    <Setter Property="ScaleTransform.ScaleY" Value="0.1"/>
+                                                    <Setter Property="Opacity" Value="1.0"/>
+                                                </KeyFrame>
+                                                <KeyFrame Cue="100%">
+                                                    <Setter Property="ScaleTransform.ScaleX" Value="1.0"/>
+                                                    <Setter Property="ScaleTransform.ScaleY" Value="1.0"/>
+                                                    <Setter Property="Opacity" Value="0.0"/>
+                                                </KeyFrame>
+                                            </Animation>
+                                        </Style.Animations>
+                                    </Style>
+                                </Ellipse.Styles>
+                            </Ellipse>
+
+                        </Canvas>
+                    </Viewbox>
                 </StackPanel>
             </Border>
 

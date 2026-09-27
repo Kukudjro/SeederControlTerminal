@@ -8,7 +8,7 @@ namespace SeederControlTerminal.Services
 {
     public class TcpJsonMessageSender : IMessageSender
     {
-        private readonly TimeSpan _timeout = TimeSpan.FromSeconds(4);
+        private readonly TimeSpan _timeout = TimeSpan.FromSeconds(30);
 
         public async Task<string> SendMessageAsync<TOptions, TMessage>(TOptions options, TMessage message)
         {
