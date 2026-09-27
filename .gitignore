@@ -1,0 +1,15 @@
+## [Файлы сборки и кэша .NET]
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docattachments
+
+## [Папка настроек Visual Studio]
+.vs/
+
+## [Локальные пакеты]
+packages/
+*.nuget.props
+*.nuget.targets

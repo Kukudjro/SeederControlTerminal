@@ -1,0 +1,80 @@
+﻿<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:SeederControlTerminal.ViewModels"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="700" d:DesignHeight="400"
+        x:Class="SeederControlTerminal.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Icon="/Assets/avalonia-logo.ico"
+        Title="Терминал"
+        Width="750" Height="550"
+        WindowStartupLocation="CenterScreen">
+
+  <Grid ColumnDefinitions="320, *">
+        
+        <!-- ЛЕВАЯ ЧАСТЬ: Настройки отправки и приема -->
+        <ScrollViewer Grid.Column="0">
+            <StackPanel Margin="15" Spacing="15">
+                
+                <!-- БЛОК 1: ОТПРАВИТЕЛЬ -->
+                <StackPanel Spacing="8">
+                    <TextBlock Text="🚀 Настройки ОТПРАВКИ" FontSize="15" FontWeight="Bold" Foreground="#1e90ff"/>
+                    <Border Height="1" Background="#e0e0e0"/>
+                    
+                    <TextBlock Text="Удаленный IP (куда шлем):"/>
+                    <TextBox Text="{Binding IpAddress, Mode=TwoWay}"/>
+                    
+                    <TextBlock Text="Удаленный Порт:"/>
+                    <NumericUpDown Value="{Binding Port}" Minimum="1" Maximum="65535" FormatString="0"/>
+                    
+                    <TextBlock Text="Текст сообщения:"/>
+                    <TextBox Text="{Binding MessageText, Mode=TwoWay}" Watermark="Payload..."/>
+                    
+                    <Button Content="Отправить по TCP" 
+                            Command="{Binding SendMessageCommand}"
+                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                            Background="#1e90ff" Foreground="White" Padding="10" FontWeight="Bold"/>
+                </StackPanel>
+                
+                <Control Height="10"/>
+
+                <!-- БЛОК 2: ПРИЕМНИК -->
+                <StackPanel Spacing="8">
+                    <TextBlock Text="📥 Настройки ПРИЕМНИКА" FontSize="15" FontWeight="Bold" Foreground="#2ed573"/>
+                    <Border Height="1" Background="#e0e0e0"/>
+                    
+                    <TextBlock Text="Локальный IP (0.0.0.0 - все):"/>
+                    <TextBox Text="{Binding ReceiverIp, Mode=TwoWay}"
+                             IsEnabled="{Binding IsReceiverFieldsEnabled}"/>
+                    
+                    <TextBlock Text="Порт для прослушивания:"/>
+                    <NumericUpDown Value="{Binding ReceiverPort}"
+                                   Minimum="1" Maximum="65535" FormatString="0"
+                                   IsEnabled="{Binding IsReceiverFieldsEnabled}"/>
+                    
+                    <Button Content="{Binding ReceiverButtonText}" 
+                            Command="{Binding ToggleReceiverCommand}"
+                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                            Background="#2ed573" Foreground="White" Padding="10" FontWeight="Bold"/>
+                </StackPanel>
+
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- ПРАВАЯ ЧАСТЬ: Монитор обмена (Лог) -->
+        <Grid Grid.Column="1" RowDefinitions="Auto, *" Margin="15">
+            <TextBlock Grid.Row="0" Text="Монитор обмена данными (События)" FontSize="16" FontWeight="Bold" Margin="0,0,0,10"/>
+            <Border Grid.Row="1" BorderBrush="#e0e0e0" BorderThickness="1" CornerRadius="4">
+                <ScrollViewer>
+                    <TextBox Text="{Binding NetworkLog}" 
+                             IsReadOnly="True" 
+                             TextWrapping="Wrap"
+                             FontFamily="Courier New"
+                             Background="#f8f9fa"
+                             BorderThickness="0"/>
+                </ScrollViewer>
+            </Border>
+        </Grid>
+    </Grid>
+</Window>
