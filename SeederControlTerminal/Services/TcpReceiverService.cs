@@ -1,6 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+using System.Buffers;
+using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -9,16 +9,20 @@ using System.Threading.Tasks;
 
 namespace SeederControlTerminal.Services
 {
-    public class TcpReceiverService
+    public sealed class TcpReceiverService
     {
+        private const int BufferSize = 4096;
         private TcpListener? _listener;
         private CancellationTokenSource? _cts;
+        private Task? _listeningTask;
 
         public event Action<string>? OnMessageReceived;
         public event Action<string>? OnLogNeeded;
 
         public void StartListening(string ipAddress, int port)
         {
+            if (_listener != null) return; // Защита от повторного запуска
+
             try
             {
                 _cts = new CancellationTokenSource();
@@ -32,7 +36,8 @@ namespace SeederControlTerminal.Services
 
                 OnLogNeeded?.Invoke($"[ПРИЕМНИК] Запущен на {localIp}:{port}. Ожидаю пакеты...");
 
-                Task.Run(() => ListenAsync(_cts.Token));
+                // Сохраняем задачу, чтобы корректно дождаться её завершения при остановке
+                _listeningTask = ListenAsync(_cts.Token);
             }
             catch (Exception ex)
             {
@@ -44,27 +49,51 @@ namespace SeederControlTerminal.Services
         {
             if (_listener == null) return;
 
-            while (!token.IsCancellationRequested)
+            try
+            {
+                while (!token.IsCancellationRequested)
+                {
+
+                    TcpClient client = await _listener.AcceptTcpClientAsync(token).ConfigureAwait(false);
+
+                    _ = HandleClientAsync(client, token);
+                }
+            }
+            catch (OperationCanceledException)
+            {
+            }
+            catch (Exception ex) when (!token.IsCancellationRequested)
+            {
+                OnLogNeeded?.Invoke($"❌ [ПРИЕМНИК] Ошибка цикла прослушивания: {ex.Message}");
+            }
+        }
+
+        private async Task HandleClientAsync(TcpClient client, CancellationToken token)
+        {
+            using (client)
             {
                 try
                 {
-                    using TcpClient client = await _listener.AcceptTcpClientAsync(token);
                     using NetworkStream stream = client.GetStream();
 
-                    byte[] buffer = new byte[1024];
-                    int bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length, token);
-
-                    if (bytesRead > 0)
+                    byte[] buffer = ArrayPool<byte>.Shared.Rent(BufferSize);
+                    try
                     {
-                        // Чистая конвертация байт в строку UTF-8 без лишних перекодирований
-                        string jsonReceived = Encoding.UTF8.GetString(buffer, 0, bytesRead);
+                        int bytesRead = await stream.ReadAsync(buffer.AsMemory(0, BufferSize), token).ConfigureAwait(false);
 
-                        // Передаем JSON во ViewModel
-                        OnMessageReceived?.Invoke(jsonReceived);
+                        if (bytesRead > 0)
+                        {
+                            string jsonReceived = Encoding.UTF8.GetString(buffer, 0, bytesRead);
 
-                        // Отвечаем отправителю
-                        byte[] responseBytes = Encoding.UTF8.GetBytes("Пакет JSON успешно доставлен на удаленный приемник. ОК.");
-                        await stream.WriteAsync(responseBytes, 0, responseBytes.Length, token);
+                            OnMessageReceived?.Invoke(jsonReceived);
+
+                            byte[] responseBytes = Encoding.UTF8.GetBytes("Пакет JSON успешно доставлен на удаленный приемник. ОК.");
+                            await stream.WriteAsync(responseBytes.AsMemory(), token).ConfigureAwait(false);
+                        }
+                    }
+                    finally
+                    {
+                        ArrayPool<byte>.Shared.Return(buffer);
                     }
                 }
                 catch (Exception)
@@ -75,9 +104,24 @@ namespace SeederControlTerminal.Services
 
         public void Stop()
         {
-            _cts?.Cancel();
-            _listener?.Stop();
-            OnLogNeeded?.Invoke("[ПРИЕМНИК] Остановлен.");
+            try
+            {
+                _cts?.Cancel();
+                _listener?.Stop();
+
+                _listeningTask?.GetAwaiter().GetResult();
+            }
+            catch (Exception)
+            {
+            }
+            finally
+            {
+                _cts?.Dispose();
+                _cts = null;
+                _listener = null;
+                _listeningTask = null;
+                OnLogNeeded?.Invoke("[ПРИЕМНИК] Остановлен.");
+            }
         }
     }
 }
