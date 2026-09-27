@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Buffers;
-using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -21,23 +20,21 @@ namespace SeederControlTerminal.Services
 
         public void StartListening(string ipAddress, int port)
         {
-            if (_listener != null) return; // Защита от повторного запуска
+            if (_listener != null) return; // защита от повторного запуска
 
             try
             {
-                _cts = new CancellationTokenSource();
-
                 IPAddress localIp = string.IsNullOrWhiteSpace(ipAddress) || ipAddress == "0.0.0.0"
                     ? IPAddress.Any
                     : IPAddress.Parse(ipAddress);
 
+                _cts = new CancellationTokenSource();
                 _listener = new TcpListener(localIp, port);
                 _listener.Start();
 
                 OnLogNeeded?.Invoke($"[ПРИЕМНИК] Запущен на {localIp}:{port}. Ожидаю пакеты...");
 
-                // Сохраняем задачу, чтобы корректно дождаться её завершения при остановке
-                _listeningTask = ListenAsync(_cts.Token);
+                _listeningTask = ListenAsync(_listener, _cts.Token);
             }
             catch (Exception ex)
             {
@@ -45,24 +42,19 @@ namespace SeederControlTerminal.Services
             }
         }
 
-        private async Task ListenAsync(CancellationToken token)
+        private async Task ListenAsync(TcpListener listener, CancellationToken token)
         {
-            if (_listener == null) return;
-
             try
             {
                 while (!token.IsCancellationRequested)
                 {
-
-                    TcpClient client = await _listener.AcceptTcpClientAsync(token).ConfigureAwait(false);
-
+                    TcpClient client = await listener.AcceptTcpClientAsync(token).ConfigureAwait(false);
                     _ = HandleClientAsync(client, token);
                 }
             }
-            catch (OperationCanceledException)
-            {
-            }
-            catch (Exception ex) when (!token.IsCancellationRequested)
+            catch (OperationCanceledException) { }
+            catch (ObjectDisposedException) { }
+            catch (Exception ex)
             {
                 OnLogNeeded?.Invoke($"❌ [ПРИЕМНИК] Ошибка цикла прослушивания: {ex.Message}");
             }
@@ -72,47 +64,42 @@ namespace SeederControlTerminal.Services
         {
             using (client)
             {
+                byte[] buffer = ArrayPool<byte>.Shared.Rent(BufferSize);
                 try
                 {
                     using NetworkStream stream = client.GetStream();
+                    int bytesRead = await stream.ReadAsync(buffer.AsMemory(0, BufferSize), token).ConfigureAwait(false);
+                    if (bytesRead <= 0) return;
 
-                    byte[] buffer = ArrayPool<byte>.Shared.Rent(BufferSize);
-                    try
-                    {
-                        int bytesRead = await stream.ReadAsync(buffer.AsMemory(0, BufferSize), token).ConfigureAwait(false);
+                    string jsonReceived = Encoding.UTF8.GetString(buffer, 0, bytesRead);
+                    OnMessageReceived?.Invoke(jsonReceived);
 
-                        if (bytesRead > 0)
-                        {
-                            string jsonReceived = Encoding.UTF8.GetString(buffer, 0, bytesRead);
-
-                            OnMessageReceived?.Invoke(jsonReceived);
-
-                            byte[] responseBytes = Encoding.UTF8.GetBytes("Пакет JSON успешно доставлен на удаленный приемник. ОК.");
-                            await stream.WriteAsync(responseBytes.AsMemory(), token).ConfigureAwait(false);
-                        }
-                    }
-                    finally
-                    {
-                        ArrayPool<byte>.Shared.Return(buffer);
-                    }
+                    byte[] responseBytes = Encoding.UTF8.GetBytes("Пакет JSON успешно доставлен на удаленный приемник. ОК.");
+                    await stream.WriteAsync(responseBytes.AsMemory(), token).ConfigureAwait(false);
                 }
-                catch (Exception)
+                catch (Exception ex) when (!token.IsCancellationRequested)
                 {
+                    OnLogNeeded?.Invoke($"⚠️ [ПРИЕМНИК] Ошибка обработки клиента: {ex.Message}");
+                }
+                finally
+                {
+                    ArrayPool<byte>.Shared.Return(buffer);
                 }
             }
         }
 
         public void Stop()
         {
+            if (_listener == null) return;
+
             try
             {
                 _cts?.Cancel();
                 _listener?.Stop();
-
-                _listeningTask?.GetAwaiter().GetResult();
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                OnLogNeeded?.Invoke($"❌ [ПРИЕМНИК] Ошибка остановки: {ex.Message}");
             }
             finally
             {

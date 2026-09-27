@@ -9,7 +9,7 @@ using System.Windows.Input;
 
 namespace SeederControlTerminal.ViewModels
 {
-    public class MainWindowViewModel : ViewModelBase
+    public class MainWindowViewModel : ViewModelBase, IDisposable
     {
         private readonly IMessageSender _messageSender;
         private readonly TcpReceiverService _receiverService;
@@ -24,6 +24,8 @@ namespace SeederControlTerminal.ViewModels
         private int _receiverPort = 8080;
         private bool _isReceiverStarted;
         private string _receiverButtonText = "Включить приемник";
+
+        private bool _disposed;
 
         public string IpAddress { get => _ipAddress; set => this.RaiseAndSetIfChanged(ref _ipAddress, value); }
         public int Port { get => _port; set => this.RaiseAndSetIfChanged(ref _port, value); }
@@ -60,7 +62,7 @@ namespace SeederControlTerminal.ViewModels
             _receiverService.OnMessageReceived += HandleIncomingMessage;
 
             // Передаем системные логи приемника в наш сервис напрямую
-            _receiverService.OnLogNeeded += (msg) => _logService.Info(msg);
+            _receiverService.OnLogNeeded += _logService.Info;
 
             _logService.Info("Инженерный пульт инициализирован через DI.");
 
@@ -132,6 +134,16 @@ namespace SeederControlTerminal.ViewModels
             {
                 IsSending = false;
             }
+        }
+
+        public void Dispose()
+        {
+            if (_disposed) return;
+            _disposed = true;
+
+            _receiverService.OnMessageReceived -= HandleIncomingMessage;
+            _receiverService.OnLogNeeded -= _logService.Info;
+            _receiverService.Stop();
         }
     }
 }
