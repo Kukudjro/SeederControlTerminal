@@ -96,13 +96,10 @@
             </Border>
 
             <Border Grid.Row="2" BorderBrush="#e0e0e0" BorderThickness="1" CornerRadius="4" Background="#f8f9fa">
-                <!-- Отключаем горизонтальную прокрутку, чтобы текст не улетал вправо, а переносился -->
                 <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-
-                    <ListBox ItemsSource="{Binding LogEntries}" Background="Transparent" BorderThickness="0">
+                    <ListBox Name="LogListBox" ItemsSource="{Binding LogEntries}" Background="Transparent" BorderThickness="0">
                         <ListBox.ItemTemplate>
                             <DataTemplate x:DataType="models:LogEntry">
-                                <!-- Убираем StackPanel (он ломает перенос) и используем Grid -->
                                 <Grid ColumnDefinitions="Auto, *">
 
                                     <TextBlock Grid.Column="0"
