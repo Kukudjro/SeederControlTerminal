@@ -36,7 +36,7 @@ namespace SeederControlTerminal.ViewModels
         public string ReceiverButtonText { get => _receiverButtonText; set => this.RaiseAndSetIfChanged(ref _receiverButtonText, value); }
 
         // Вычисляемые геттеры
-        public string ConnectionStatus => IsReceiverStarted ? $"Приемник активен. Слушаю порт {ReceiverPort}..." : "Приемник отключен";
+        public string ConnectionStatus => IsReceiverStarted ? $"Текущий приемник активен. Слушаю порт {ReceiverPort}..." : "Текущий приемник отключен";
         public string StatusColor => IsReceiverStarted ? "#2ed573" : "#718093";
         public bool IsReceiverFieldsEnabled => !IsReceiverStarted;
 
