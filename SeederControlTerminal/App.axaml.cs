@@ -1,6 +1,7 @@
 ﻿using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
+using SeederControlTerminal.Services.Log;
 using SeederControlTerminal.ViewModels;
 using SeederControlTerminal.Views;
 
@@ -17,8 +18,11 @@ public partial class App : Application
     {
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
+
+            ILogService logService = new LogService();
+
             Services.IMessageSender tcpSender = new Services.TcpJsonMessageSender();
-            var viewModel = new MainWindowViewModel(tcpSender);
+            var viewModel = new MainWindowViewModel(tcpSender, logService);
 
             desktop.MainWindow = new MainWindow
             {

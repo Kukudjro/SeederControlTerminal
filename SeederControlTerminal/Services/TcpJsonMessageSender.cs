@@ -26,7 +26,7 @@ namespace SeederControlTerminal.Services
             byte[] sendData = Encoding.UTF8.GetBytes(json);
             await stream.WriteAsync(sendData, 0, sendData.Length);
 
-            byte[] responseBuffer = new byte[sendData.Length];
+            byte[] responseBuffer = new byte[1024];
             int bytesRead = await stream.ReadAsync(responseBuffer, 0, responseBuffer.Length).WaitAsync(_timeout);
 
             return bytesRead > 0

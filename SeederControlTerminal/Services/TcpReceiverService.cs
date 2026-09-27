@@ -56,6 +56,7 @@ namespace SeederControlTerminal.Services
 
                     if (bytesRead > 0)
                     {
+                        // Чистая конвертация байт в строку UTF-8 без лишних перекодирований
                         string jsonReceived = Encoding.UTF8.GetString(buffer, 0, bytesRead);
 
                         // Передаем JSON во ViewModel
