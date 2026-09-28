@@ -141,9 +141,19 @@ namespace SeederControlTerminal.ViewModels
             if (_disposed) return;
             _disposed = true;
 
-            _receiverService.OnMessageReceived -= HandleIncomingMessage;
-            _receiverService.OnLogNeeded -= _logService.Info;
-            _receiverService.Stop();
+            _receiverService?.Stop();
+
+            if (_receiverService != null)
+            {
+                _receiverService.OnMessageReceived -= HandleIncomingMessage;
+
+                if (_logService != null)
+                {
+                    _receiverService.OnLogNeeded -= _logService.Info;
+                }
+            }
+
+            _disposed = true;
         }
     }
 }

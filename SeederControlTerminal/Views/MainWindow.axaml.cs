@@ -1,5 +1,6 @@
 ﻿using Avalonia.Controls;
 using SeederControlTerminal.ViewModels;
+using System;
 using System.Collections.Specialized;
 
 
@@ -39,6 +40,17 @@ public partial class MainWindow : Window
                 }
             };
         } 
+    }
+
+    protected override void OnClosed(EventArgs e)
+    {
+        base.OnClosed(e);
+
+        // Получаем ViewModel из DataContext и вызываем Dispose
+        if (DataContext is IDisposable disposableViewModel)
+        {
+            disposableViewModel.Dispose();
+        }
     }
 
 }
